@@ -62,6 +62,6 @@ class BernoulliNaiveBayes:
                     featureLikelyhood += x[j] * np.log(self.thetaJK[i, j]) + (1 - x[j]) * np.log(1 - self.thetaJK[i, j])
                 classProb.append(np.log(self.thetaK[i]) + featureLikelyhood)
             # we predict the class with the highest likelyhood
-            predictions.append(self.classesclassesnp.max(classProb))
+            predictions.append(self.classes[np.argmax(classProb)])
         return predictions
 
