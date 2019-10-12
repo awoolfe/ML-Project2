@@ -39,10 +39,9 @@ class BernoulliNaiveBayes:
         # TODO: find a way to use vector operations instead of for loops if possible and time permits
         for k in range(self.classes.shape[0]):
             for j in range(X.shape[1]):
-                # TODO: fix this, issues with size mismatch and tuple/int casting
                 examples = np.where(y == self.classes[k])  # we count the number of times we have a certain class
                 instances = np.where(X[examples, j] == 1)  # we count the numbers of times x_j == 1 in the examples
-                self.thetaJK[k, j] = instances + 1 / examples + 2 # we compute the conditional probability with Laplace Smoothing
+                self.thetaJK[k, j] = len(instances) + 1 / len(examples) + 2 # we compute the conditional probability with Laplace Smoothing
 
     '''
     The predict function where we classify data based on the learned parameters
@@ -53,10 +52,11 @@ class BernoulliNaiveBayes:
 
     '''
     def predict(self, X):
-        predictions = np.array()
-        classProb = np.array()
+        predictions = np.array([])
+        classProb = np.array([])
         for x in X:
             # we compute the log likelyhood of each class of the sample
+            # TODO: fix issues with iteration and numpy.ndarray has no attribute append
             for i in self.classes.shape[0]:
                 featureLikelyhood = 0
                 # we compute the log Likely hood of the features for a given class
