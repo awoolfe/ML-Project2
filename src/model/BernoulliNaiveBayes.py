@@ -43,6 +43,8 @@ class BernoulliNaiveBayes:
                 instances = np.where(X[examples[0], j] > 0)  # we count the numbers of times x_j == 1 in the examples
                 self.thetaJK[k, j] = (instances[0].size + 1) / (examples[0].size + 2) # we compute the conditional probability with Laplace Smoothing
 
+    def inverse_log(self, ndarray):
+        return np.log(1 - self.thetaJK)
     '''
     The predict function where we classify data based on the learned parameters
     Input:
@@ -57,15 +59,19 @@ class BernoulliNaiveBayes:
         # since the logodd of our entries and our classes doesn't change, we compute them beforehand to save some computation
         logThetaK = np.array([np.log(i) for i in self.thetaK])
         logThetaJK = np.log(self.thetaJK)
+        logInverseThetaJK = self.inverse_log(self.thetaJK)
         for x in X:
             classProb = np.array([])
             for i in range(self.classes.shape[0]):
                 featureLikelyhood = 0
                 # we compute the log Likely hood of the features for a given class
                 for j in range(x.shape[0]):
-                    featureLikelyhood += x[j] * logThetaJK[i, j] + (1 - x[j]) * np.log(1 - self.thetaJK[i, j])
+                    featureLikelyhood += x[j] * logThetaJK[i, j] + (1 - x[j]) * logInverseThetaJK[i, j]
                 classProb = np.append(classProb, logThetaK[i] + featureLikelyhood)
             # we predict the class with the highest likelyhood
             predictions = np.append(predictions, self.classes[np.argmax(classProb)])
         return predictions
+
+
+
 
