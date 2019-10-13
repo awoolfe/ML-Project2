@@ -54,15 +54,17 @@ class BernoulliNaiveBayes:
     def predict(self, X):
         predictions = np.array([])
         classProb = np.array([])
+        # since the logodd of our entries and our classes doesn't change, we compute them beforehand to save some computation
+        logThetaK = np.array([np.log(i) for i in self.thetaK])
+        logThetaJK = np.log(self.thetaJK)
         for x in X:
             classProb = np.array([])
-            # we compute the log likelyhood of each class of the sample
             for i in range(self.classes.shape[0]):
                 featureLikelyhood = 0
                 # we compute the log Likely hood of the features for a given class
                 for j in range(x.shape[0]):
-                    featureLikelyhood += x[j] * np.log(self.thetaJK[i, j]) + (1 - x[j]) * np.log(1 - self.thetaJK[i, j])
-                classProb = np.append(classProb, np.log(self.thetaK[i]) + featureLikelyhood)
+                    featureLikelyhood += x[j] * logThetaJK[i, j] + (1 - x[j]) * np.log(1 - self.thetaJK[i, j])
+                classProb = np.append(classProb, logThetaK[i] + featureLikelyhood)
             # we predict the class with the highest likelyhood
             predictions = np.append(predictions, self.classes[np.argmax(classProb)])
         return predictions
