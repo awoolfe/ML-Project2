@@ -38,10 +38,10 @@ class BernoulliNaiveBayes:
         self.thetaJK = np.empty((self.classes.shape[0], X.shape[1]))
         # TODO: find a way to use vector operations instead of for loops if possible and time permits
         for k in range(self.classes.shape[0]):
+            examples = np.where(y == self.classes[k])  # we count the number of times we have a certain class
             for j in range(X.shape[1]):
-                examples = np.where(y == self.classes[k])  # we count the number of times we have a certain class
-                instances = np.where(X[examples, j] == 1)  # we count the numbers of times x_j == 1 in the examples
-                self.thetaJK[k, j] = len(instances) + 1 / len(examples) + 2 # we compute the conditional probability with Laplace Smoothing
+                instances = np.where(X[examples[0], j] > 0)  # we count the numbers of times x_j == 1 in the examples
+                self.thetaJK[k, j] = (instances[0].size + 1) / (examples[0].size + 2) # we compute the conditional probability with Laplace Smoothing
 
     '''
     The predict function where we classify data based on the learned parameters
@@ -55,15 +55,15 @@ class BernoulliNaiveBayes:
         predictions = np.array([])
         classProb = np.array([])
         for x in X:
+            classProb = np.array([])
             # we compute the log likelyhood of each class of the sample
-            # TODO: fix issues with iteration and numpy.ndarray has no attribute append
-            for i in self.classes.shape[0]:
+            for i in range(self.classes.shape[0]):
                 featureLikelyhood = 0
                 # we compute the log Likely hood of the features for a given class
                 for j in range(x.shape[0]):
                     featureLikelyhood += x[j] * np.log(self.thetaJK[i, j]) + (1 - x[j]) * np.log(1 - self.thetaJK[i, j])
-                classProb.append(np.log(self.thetaK[i]) + featureLikelyhood)
+                classProb = np.append(classProb, np.log(self.thetaK[i]) + featureLikelyhood)
             # we predict the class with the highest likelyhood
-            predictions.append(self.classes[np.argmax(classProb)])
+            predictions = np.append(predictions, self.classes[np.argmax(classProb)])
         return predictions
 
