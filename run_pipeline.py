@@ -3,12 +3,13 @@ import numpy as np
 from collections import Counter
 from itertools import chain
 
-from src.pipeline_utils import stratified_k_folds, ngram_to, ngram_tokenize
+from src.pipeline_utils import stratified_k_folds, evaluate_acc, ngram_to, ngram_tokenize
 from src.model.BernoulliNaiveBayes import BernoulliNaiveBayes
+from sklearn.naive_bayes import BernoulliNB
 
 if __name__ == '__main__':
     K = 5
-    VOCAB_SIZE = 500
+    VOCAB_SIZE = 1000
     OOV_TOKEN = "--UNK--"
     NGRAM = 1
     Y_COL = "subreddits"
@@ -32,11 +33,17 @@ if __name__ == '__main__':
         Y_valid = valid[Y_COL].to_list()
 
         model = BernoulliNaiveBayes()
+        model2 = BernoulliNB()
+
         model.fit(np.array(X_train), np.array(Y_train))
+        model2.fit(np.array(X_train), np.array(Y_train))
 
         valid_pred = model.predict(np.array(X_valid))
+        valid_pred2 = model2.predict(np.array(X_valid))
         print(valid_pred)
         print(np.array(Y_valid))
+        print(evaluate_acc(valid_pred, Y_valid))
+        print(evaluate_acc(valid_pred2, Y_valid))
         print("-"*80)
 
 

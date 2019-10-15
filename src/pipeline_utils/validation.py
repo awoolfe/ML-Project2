@@ -56,3 +56,24 @@ def stratified_k_folds(df: pd.DataFrame,
             df_test[k_i] = df_test[k_i].append(df_y_class.iloc[i_eval])
     return df_train, df_test
 
+def evaluate_acc(target_y, true_y):
+    '''
+    Compute the accuracy of the model
+    :param target_y: predictions from the model
+    :param true_y: true categories
+    :return: the accuracy
+
+    adapted from previous mini project
+    '''
+    correct_labels = 0
+    if len(target_y) != len(true_y):  # to prevent indexing exceptions
+        print("can't compare those sets, not the same size")
+        return -1  # return error code
+    for i in range(len(target_y)):
+        if target_y[i] == true_y[i]:
+            correct_labels += 1  # we count how many labels the model got right
+    return correct_labels/len(target_y)  # we return the ratio over correct over total
+
+
+
+
