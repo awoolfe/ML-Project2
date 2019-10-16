@@ -1,7 +1,7 @@
 from typing import List, Dict
-from collections import Counter
+from collections import Counter, defaultdict
+from itertools import chain
 import numpy as np
-
 
 def ngram_tokenize(tokens: List[str], n: int, token_joiner: str = " "):
     if n == 1:
@@ -9,6 +9,43 @@ def ngram_tokenize(tokens: List[str], n: int, token_joiner: str = " "):
     else:
         return [token_joiner.join(tokens[i:i + n]) for i in
                 range(len(tokens) - n + 1)]
+
+def build_vocab(ngram_tokenized_documents: List[List[str]], document_classes: List[str], n):
+    # create initial vocabulary
+    vocab = Counter(list(chain.from_iterable(ngram_tokenized_documents))).most_common(100_000)
+    vocab_itos = [word for (word, count) in vocab]
+    vocab_stoi = {k:i for i,k in enumerate(vocab_itos)}
+
+    # count document occurrences of ngrams for different classes
+    # i.e. number of documents containing an ngram
+    ngram_occurences_per_class = defaultdict(lambda: np.zeros(len(vocab)))
+    ngram_occurences_all_classes = np.zeros(len(vocab))
+    for doc, cls in zip(ngram_tokenized_documents, document_classes):
+        doc_occurences = ngram_to(doc, vocab_stoi, n);
+        ngram_occurences_per_class[cls] += doc_occurences
+        ngram_occurences_all_classes += doc_occurences
+
+    # compute relative ngram frequencies for different classes
+    # i.e. how often do ngrams occur in this class relative to other classes
+    num_classes = len(ngram_occurences_per_class)
+    average_occurences = ngram_occurences_all_classes / num_classes
+    ngram_freq_per_class = {}
+    for cls, occurences in ngram_occurences_per_class.items():
+        rel_freq = (occurences - average_occurences) / occurences.sum()
+        ngram_freq_per_class[cls] = rel_freq
+
+    # find most relatively frequent ngrams across classes
+    ngram_freqs = np.zeros(len(vocab))
+    for rel_freq in ngram_freq_per_class.values():
+        ngram_freqs = np.maximum(ngram_freqs, rel_freq)
+
+    # return new vocab sorted by relative frequencies
+    new_vocab_itos = [vocab_itos[i] for i in (-ngram_freqs).argsort()]
+    print("-"*80)
+    print("These are the top 50 terms, by relative frequency: \n")
+    print("\n".join(new_vocab_itos[:50]))
+    print("-"*80)
+    return new_vocab_itos
 
 
 def ngram_tf(tokenized_example: List[str],
