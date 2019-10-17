@@ -2,14 +2,19 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from itertools import chain
+from src.model.stackingEnsemble import stackingEnsemble
 
 from src.pipeline_utils import stratified_k_folds, evaluate_acc, evaluate, ngram_to, ngram_tokenize, build_vocab
 from src.model.BernoulliNaiveBayes import BernoulliNaiveBayes
 from sklearn.naive_bayes import BernoulliNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
 
 if __name__ == '__main__':
     K = 5
-    VOCAB_SIZE = 5000
+    VOCAB_SIZE = 5
     OOV_TOKEN = "--UNK--"
     NGRAM = 1
     Y_COL = "subreddits"
@@ -29,6 +34,9 @@ if __name__ == '__main__':
     vocab_stoi = {k:i for i,k in enumerate(vocab_itos)}
     print("creating folds")
     train_folds, valid_folds = stratified_k_folds(df, Y_COL, K)
+
+    models = [DecisionTreeClassifier(), KNeighborsClassifier(), LogisticRegression(), SGDClassifier(), BernoulliNaiveBayes()]
+
     for i, (train, valid) in enumerate(zip(train_folds, valid_folds)):
         print("Fold: ", i)
         print("Formatting data...")
@@ -40,22 +48,26 @@ if __name__ == '__main__':
         print("Instantiating model...")
         model = BernoulliNaiveBayes()
         model2 = BernoulliNB()
+        model3 = stackingEnsemble(models)
 
         print("Fitting model...")
         model.fit(np.array(X_train), np.array(Y_train))
         model2.fit(np.array(X_train), np.array(Y_train))
+        model3.fit(np.array(X_train), np.array(Y_train))
 
         print("Evaluating model...")
         valid_pred = model.predict(np.array(X_valid))
 
         valid_pred2 = model2.predict(np.array(X_valid))
         train_pred2 = model2.predict(np.array(X_train))
+        valid_pred3 = model3.predict(np.array(X_valid))
 
         print("Scikit Learn:")
         print(evaluate_acc(valid_pred2, Y_valid))
         print("OUr model")
         print(evaluate_acc(valid_pred, Y_valid))
-
+        print("ensemble Model")
+        print(evaluate_acc(valid_pred3, Y_valid))
         # print(evaluate(train_pred2, Y_train, label_stoi))
         # print(evaluate(valid_pred, Y_valid, label_stoi))
         print("-"*80)
