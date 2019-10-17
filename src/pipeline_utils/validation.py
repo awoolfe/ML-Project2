@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def stratified_split(df: pd.DataFrame,
                      y_col: str,
@@ -75,5 +76,31 @@ def evaluate_acc(target_y, true_y):
     return correct_labels/len(target_y)  # we return the ratio over correct over total
 
 
+def evaluate(predicted_y, true_y, label_stoi):
+    y = np.zeros((len(true_y), len(label_stoi)))
+    for i, l in enumerate(true_y):
+        y[i, label_stoi[l]] = 1
+
+    y_pred = np.zeros((len(predicted_y), len(label_stoi)))
+    for i, l in enumerate(predicted_y):
+        y_pred[i, label_stoi[l]] = 1
+
+    total = len(y)
+    tp = ((y == 1) & (y_pred == 1)).sum(0)
+    fp = ((y == 0) & (y_pred == 1)).sum(0)
+    tn = ((y == 0) & (y_pred == 0)).sum(0)
+    fn = ((y == 1) & (y_pred == 0)).sum(0)
+
+    accuracy = (tp + tn) / total
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+
+    return {
+        label: {
+            "a": accuracy[i],
+            "r": recall[i],
+            "p": precision[i],
+        } for label,i in label_stoi.items()
+    }
 
 
