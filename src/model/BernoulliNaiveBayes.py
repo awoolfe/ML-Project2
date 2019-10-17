@@ -60,18 +60,22 @@ class BernoulliNaiveBayes:
         logThetaK = np.array([np.log(i) for i in self.thetaK])
         logThetaJK = np.log(self.thetaJK)
         logInverseThetaJK = self.inverse_log(self.thetaJK)
-        for x in X:
-            classProb = np.array([])
-            for i in range(self.classes.shape[0]):
-                featureLikelyhood = 0
-                # we compute the log Likely hood of the features for a given class
-                for j in range(x.shape[0]):
-                    featureLikelyhood += x[j] * logThetaJK[i, j] + (1 - x[j]) * logInverseThetaJK[i, j]
-                classProb = np.append(classProb, logThetaK[i] + featureLikelyhood)
-            # we predict the class with the highest likelyhood
-            predictions = np.append(predictions, self.classes[np.argmax(classProb)])
+
+        LikelyhoodMatrix = X.dot(np.transpose(logThetaJK)) + (1-X).dot(np.transpose(logInverseThetaJK))
+        LikelyhoodMatrix += logThetaK
+        for i in LikelyhoodMatrix:
+            predictions = np.append(predictions, self.classes[np.argmax(i)])
+
+        # for x in X:
+        #     classProb = np.array([])
+        #     for i in range(self.classes.shape[0]):
+        #         featureLikelyhood = 0
+        #         # we compute the log Likely hood of the features for a given class
+        #         for j in range(x.shape[0]):
+        #             featureLikelyhood += x[j] * logThetaJK[i, j] + (1 - x[j]) * logInverseThetaJK[i, j]
+        #         classProb = np.append(classProb, logThetaK[i] + featureLikelyhood)
+        #     # we predict the class with the highest likelyhood
+        #     predictions = np.append(predictions, self.classes[np.argmax(classProb)])
         return predictions
-
-
 
 

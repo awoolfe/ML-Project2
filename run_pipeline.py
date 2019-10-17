@@ -38,20 +38,26 @@ if __name__ == '__main__':
         Y_valid = valid[Y_COL].to_list()
 
         print("Instantiating model...")
-        # model = BernoulliNaiveBayes()
+        model = BernoulliNaiveBayes()
         model2 = BernoulliNB()
 
         print("Fitting model...")
-        # model.fit(np.array(X_train), np.array(Y_train))
+        model.fit(np.array(X_train), np.array(Y_train))
         model2.fit(np.array(X_train), np.array(Y_train))
 
         print("Evaluating model...")
-        # valid_pred = model.predict(np.array(X_valid))
+        valid_pred = model.predict(np.array(X_valid))
+
         valid_pred2 = model2.predict(np.array(X_valid))
         train_pred2 = model2.predict(np.array(X_train))
-        # print(evaluate_acc(valid_pred, Y_valid))
-        print(evaluate(train_pred2, Y_train, label_stoi))
-        print(evaluate(valid_pred2, Y_valid, label_stoi))
+
+        print("Scikit Learn:")
+        print(evaluate_acc(valid_pred2, Y_valid))
+        print("OUr model")
+        print(evaluate_acc(valid_pred, Y_valid))
+
+        # print(evaluate(train_pred2, Y_train, label_stoi))
+        # print(evaluate(valid_pred, Y_valid, label_stoi))
         print("-"*80)
 
 
