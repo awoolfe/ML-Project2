@@ -6,7 +6,7 @@ from src.model.stackingEnsemble import stackingEnsemble
 
 from src.pipeline_utils import stratified_k_folds, evaluate_acc, evaluate, ngram_to, ngram_tokenize, build_vocab
 from src.model.BernoulliNaiveBayes import BernoulliNaiveBayes
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     print("creating folds")
     train_folds, valid_folds = stratified_k_folds(df, Y_COL, K)
 
-    models = [DecisionTreeClassifier(), KNeighborsClassifier(), LogisticRegression(), SGDClassifier(), BernoulliNaiveBayes()]
+    models = [DecisionTreeClassifier(), KNeighborsClassifier(), LogisticRegression(), SGDClassifier(), MultinomialNB()]
 
     for i, (train, valid) in enumerate(zip(train_folds, valid_folds)):
         print("Fold: ", i)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
         print("Instantiating model...")
         model = BernoulliNaiveBayes()
-        model2 = BernoulliNB()
+        model2 = MultinomialNB()
         model3 = stackingEnsemble(models)
 
         print("Fitting model...")
