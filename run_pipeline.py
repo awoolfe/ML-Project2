@@ -11,44 +11,69 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
+from sklearn.decomposition import PCA
 
 if __name__ == '__main__':
-    K = 5
-    VOCAB_SIZE = 5
+    K = 2
+    VOCAB_SIZE = 1_000
     OOV_TOKEN = "--UNK--"
-    NGRAM = 1
+    NGRAMS = [1,2]
     Y_COL = "subreddits"
     X_COL = "preprocessed_comments"
+    MODELS = [DecisionTreeClassifier(), KNeighborsClassifier(), LogisticRegression(), SGDClassifier(), MultinomialNB()]
+    PCA_N = 100
 
-    # TODO: handle multiple ngrams at once
+    print("reading data, dropping na's and creating cross-validation folds.")
     df = pd.read_csv("data/reddit_spacy_train.csv")
     df.dropna(inplace=True)
     label_stoi = {k:i for i,k in enumerate(df[Y_COL].unique())}
-
-    print("creating ngrams")
-    df[X_COL] = df[X_COL].apply(lambda x: x.split())
-    ngrams = [ngram_tokenize(x, NGRAM) for x in df[X_COL]]
-
-    print("creating vocabulary")
-    vocab_itos = [OOV_TOKEN] + build_vocab(ngrams, df[Y_COL].to_list(), NGRAM)[:VOCAB_SIZE-1]
-    vocab_stoi = {k:i for i,k in enumerate(vocab_itos)}
-    print("creating folds")
     train_folds, valid_folds = stratified_k_folds(df, Y_COL, K)
 
-    models = [DecisionTreeClassifier(), KNeighborsClassifier(), LogisticRegression(), SGDClassifier(), MultinomialNB()]
-
     for i, (train, valid) in enumerate(zip(train_folds, valid_folds)):
-        print("Fold: ", i)
-        print("Formatting data...")
-        X_train = [ngram_to(x, vocab_stoi, NGRAM) for x in train[X_COL].to_list()]
-        X_valid = [ngram_to(x, vocab_stoi, NGRAM) for x in valid[X_COL].to_list()]
+        X_train = train[X_COL].to_list()
+        X_valid = valid[X_COL].to_list()
         Y_train = train[Y_COL].to_list()
         Y_valid = valid[Y_COL].to_list()
+
+        print("Tokenizing texts...")
+        # assumes text has already been pre-processed, tokenized,
+        # then joined with whitespace, as done in data_exploration.ipynb
+        X_train = [x.split() for x in X_train]
+        X_valid = [x.split() for x in X_valid]
+
+        print("Creating ngrams...")
+        # creates ngrams for different values of n
+        # and concatenates into single lists for building one vocabulary
+        X_train = [sum([ngram_tokenize(x, n) for n in NGRAMS], [])
+                   for x in X_train]
+        X_valid = [sum([ngram_tokenize(x, n) for n in NGRAMS], [])
+                   for x in X_valid]
+
+        print("creating vocabulary...")
+        vocab_itos = [OOV_TOKEN] + build_vocab(X_train, Y_train)[:VOCAB_SIZE]
+        vocab_stoi = {k: i for i, k in enumerate(vocab_itos)}
+
+        print("converting ngrams to term occurence vectors...")
+        X_train = [ngram_to(x, vocab_stoi) for x in X_train]
+        X_valid = [ngram_to(x, vocab_stoi) for x in X_valid]
+
+        print("fitting PCA to training set and transforming data...")
+        pca = PCA(PCA_N)
+        X_train = pca.fit_transform(X_train)
+        X_valid = pca.transform(X_valid)
+        
+        print("converting PCA matrix to binary features...")
+        # TODO: this doesn't seem right?
+        X_train[X_train >= 0] = 1
+        X_train[X_train < 0] = 0
+        X_valid[X_valid >= 0] = 1
+        X_valid[X_valid < 0] = 0
+        
 
         print("Instantiating model...")
         model = BernoulliNaiveBayes()
         model2 = MultinomialNB()
-        model3 = stackingEnsemble(models)
+        model3 = stackingEnsemble(MODELS)
 
         print("Fitting model...")
         model.fit(np.array(X_train), np.array(Y_train))

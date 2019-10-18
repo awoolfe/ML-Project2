@@ -10,18 +10,31 @@ def ngram_tokenize(tokens: List[str], n: int, token_joiner: str = " "):
         return [token_joiner.join(tokens[i:i + n]) for i in
                 range(len(tokens) - n + 1)]
 
-def build_vocab(ngram_tokenized_documents: List[List[str]], document_classes: List[str], n):
+
+def build_vocab(ngram_tokenized_documents: List[List[str]],
+                document_classes: List[str],
+                min_count: int = 2
+                ) -> List[str]:
+    """
+    # TODO: change max_counter_size to minimum occurence instead
+
+    :param ngram_tokenized_documents:
+    :param document_classes:
+    :param max_counter_size:
+    :return:
+    """
     # create initial vocabulary
-    vocab = Counter(list(chain.from_iterable(ngram_tokenized_documents))).most_common(100_000)
-    vocab_itos = [word for (word, count) in vocab]
-    vocab_stoi = {k:i for i,k in enumerate(vocab_itos)}
+    all_documents = list(chain.from_iterable(ngram_tokenized_documents))
+    vocab = [ngram for (ngram, count) in Counter(all_documents).most_common()
+             if count >= min_count]
+    vocab_stoi = {k:i for i,k in enumerate(vocab)}
 
     # count document occurrences of ngrams for different classes
     # i.e. number of documents containing an ngram
     ngram_occurences_per_class = defaultdict(lambda: np.zeros(len(vocab)))
     ngram_occurences_all_classes = np.zeros(len(vocab))
     for doc, cls in zip(ngram_tokenized_documents, document_classes):
-        doc_occurences = ngram_to(doc, vocab_stoi, n);
+        doc_occurences = ngram_to(doc, vocab_stoi);
         ngram_occurences_per_class[cls] += doc_occurences
         ngram_occurences_all_classes += doc_occurences
 
@@ -40,7 +53,7 @@ def build_vocab(ngram_tokenized_documents: List[List[str]], document_classes: Li
         ngram_freqs = np.maximum(ngram_freqs, rel_freq)
 
     # return new vocab sorted by relative frequencies
-    new_vocab_itos = [vocab_itos[i] for i in (-ngram_freqs).argsort()]
+    new_vocab_itos = [vocab[i] for i in (-ngram_freqs).argsort()]
     print("-"*80)
     print("These are the top 50 terms, by relative frequency: \n")
     print("\n".join(new_vocab_itos[:50]))
@@ -48,19 +61,17 @@ def build_vocab(ngram_tokenized_documents: List[List[str]], document_classes: Li
     return new_vocab_itos
 
 
-def ngram_tf(tokenized_example: List[str],
+def ngram_tf(ngram_example: List[str],
              vocab_stoi: Dict[str, int],
-             n: int = 1
              ) -> np.ndarray:
     """Calculate ngram term frequency for tokenized text.
 
-    :param tokenized_example: text split into tokens (1gram)
+    :param ngram_example: text split into ngrams
     :param vocab_stoi: ngram vocabulary str-to-int mapping with UNK -> 0
     :param n: ngram
     :return: ngram term frequency for each ngram in the vocabulary
     """
     ngram_frequency = np.zeros(len(vocab_stoi))
-    ngram_example = ngram_tokenize(tokenized_example, n)
     for word, count in Counter(ngram_example).items():
         try:
             i = vocab_stoi[word]
@@ -71,19 +82,16 @@ def ngram_tf(tokenized_example: List[str],
     return ngram_frequency
 
 
-def ngram_to(tokenized_example: List[str],
+def ngram_to(ngram_example: List[str],
              vocab_stoi: Dict[str, int],
-             n: int = 1
              ) -> np.ndarray:
     """Calculate ngram term occurence for tokenized text.
 
-    :param tokenized_example: text split into tokens (1gram)
+    :param ngram_example: text split into ngrams
     :param vocab_stoi: ngram vocabulary str-to-int mapping with UNK -> 0
-    :param n: ngram
     :return: ngram term occurence for each ngram in the vocabulary
     """
     ngram_occurence = np.zeros(len(vocab_stoi))
-    ngram_example = ngram_tokenize(tokenized_example, n)
     for word, count in Counter(ngram_example).items():
         try:
             i = vocab_stoi[word]
@@ -94,22 +102,20 @@ def ngram_to(tokenized_example: List[str],
     return ngram_occurence
 
 
-def ngram_idf(tokenized_documents: List[List[str]],
+def ngram_idf(ngram_documents: List[List[str]],
               vocab_stoi: Dict[str, int],
               n: int = 1,
               laplace_smoothing: int = 1,
               ) -> np.ndarray:
     """Calculate inverse document frequency given a list of tokenized documents.
 
-    :param tokenized_documents: List of texts split into tokens (1gram)
+    :param ngram_documents: List of texts split into ngrams
     :param vocab_stoi: ngram vocabulary str-to-int mapping with UNK -> 0
     :param n: ngram
     :return: ngram inverse document frequency for each ngram in the vocabulary
     """
-    num_documents = len(tokenized_documents)
+    num_documents = len(ngram_documents)
     document_frequency = np.ones(len(vocab_stoi)) * laplace_smoothing
-    ngram_documents = [ngram_tokenize(tokenized_example, n)
-                       for tokenized_example in tokenized_documents]
     for ngram_example in ngram_documents:
         ngram_occurence = ngram_to(ngram_example, vocab_stoi, n)
         document_frequency += ngram_occurence
