@@ -1,0 +1,1 @@
+from bert_classification.predictors.classifier_predictor import SubredditPredictor
