@@ -104,7 +104,6 @@ def ngram_to(ngram_example: List[str],
 
 def ngram_idf(ngram_documents: List[List[str]],
               vocab_stoi: Dict[str, int],
-              n: int = 1,
               laplace_smoothing: int = 1,
               ) -> np.ndarray:
     """Calculate inverse document frequency given a list of tokenized documents.
@@ -117,7 +116,7 @@ def ngram_idf(ngram_documents: List[List[str]],
     num_documents = len(ngram_documents)
     document_frequency = np.ones(len(vocab_stoi)) * laplace_smoothing
     for ngram_example in ngram_documents:
-        ngram_occurence = ngram_to(ngram_example, vocab_stoi, n)
+        ngram_occurence = ngram_to(ngram_example, vocab_stoi)
         document_frequency += ngram_occurence
 
     return np.log(num_documents / document_frequency)
