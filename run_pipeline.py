@@ -4,7 +4,7 @@ from collections import Counter
 from itertools import chain
 from src.model.stackingEnsemble import stackingEnsemble
 
-from src.pipeline_utils import stratified_k_folds, evaluate_acc, evaluate, ngram_to, ngram_tokenize, build_vocab
+from src.pipeline_utils import stratified_k_folds, evaluate_acc, evaluate, ngram_to, ngram_tokenize, build_vocab, ngram_idf, ngram_tf
 from src.model.BernoulliNaiveBayes import BernoulliNaiveBayes
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier
@@ -53,9 +53,14 @@ if __name__ == '__main__':
         vocab_itos = [OOV_TOKEN] + build_vocab(X_train, Y_train)[:VOCAB_SIZE]
         vocab_stoi = {k: i for i, k in enumerate(vocab_itos)}
 
-        print("converting ngrams to term occurence vectors...")
-        X_train = [ngram_to(x, vocab_stoi) for x in X_train]
-        X_valid = [ngram_to(x, vocab_stoi) for x in X_valid]
+        # print("converting ngrams to term occurence vectors...")
+        # X_train = [ngram_to(x, vocab_stoi) for x in X_train]
+        # X_valid = [ngram_to(x, vocab_stoi) for x in X_valid]
+
+        print("converting ngrams to tf-idf vectors...")
+        idf = ngram_idf(X_train, vocab_stoi)
+        X_train = [ngram_tf(x, vocab_stoi) * idf for x in X_train]
+        X_valid = [ngram_tf(x, vocab_stoi) * idf for x in X_valid]
 
         print("fitting PCA to training set and transforming data...")
         pca = PCA(PCA_N)
