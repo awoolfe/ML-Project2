@@ -4,7 +4,7 @@ import numpy as np
 class stackingEnsemble:
     def __init__(self, modelList):
         self.models = modelList
-        self.metaModel = LogisticRegression()
+        self.metaModel = LogisticRegression(solver = "lbfgs", multi_class= 'multinomial')
         self.classes = None
 
     def fit(self, X, y):
