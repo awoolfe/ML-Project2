@@ -1,5 +1,9 @@
 from sklearn.linear_model import LogisticRegression
 import numpy as np
+from keras.models import Sequential
+
+batch_size = 100
+epochs = 1
 
 class stackingEnsemble:
     def __init__(self, modelList):
@@ -10,7 +14,8 @@ class stackingEnsemble:
     def fit(self, X, y):
         self.classes = np.unique(y)
         for model in self.models:
-            model.fit(X, y)
+                model.fit(X, y)
+        #model.fit(X, y,  batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.1)
         predictions = np.empty((X.shape[0], len(self.models)), dtype='object')
         for i in range(len(self.models)):
             model_predictions = self.models[i].predict(X)

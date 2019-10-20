@@ -4,6 +4,7 @@
 ######################################################################
 
 
+
 import itertools
 import os
 
@@ -24,6 +25,16 @@ from keras.layers import Dense, Activation, Dropout
 from keras.preprocessing import text, sequence
 from keras import utils
 
+from src.pipeline_utils import stratified_k_folds, evaluate_acc
+from src.model.BernoulliNaiveBayes import BernoulliNaiveBayes
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
+from src.model.stackingEnsemble import stackingEnsemble
+from sklearn.decomposition import PCA
+
 df = pd.read_csv('../data/reddit_train.csv')
 df2 = pd.read_csv('../data/reddit_test.csv')
 
@@ -33,6 +44,7 @@ df2 = pd.read_csv('../data/reddit_test.csv')
 REPLACE_BY_SPACE_RE = re.compile('[/(){}\[\]\|@,;]')
 BAD_SYMBOLS_RE = re.compile('[^0-9a-z #+_]')
 STOPWORDS = set(stopwords.words('english'))
+MODELS = [LogisticRegression(), SGDClassifier(), MultinomialNB()]
 
 
 def clean_text(text):
@@ -51,7 +63,7 @@ def clean_text(text):
 
 df['comments'] = df['comments'].apply(clean_text)
 df2['comments'] = df2['comments'].apply(clean_text)
-
+label_stoi = {k:i for i,k in enumerate(df['subreddits'].unique())}
 
 
 
@@ -75,8 +87,8 @@ y_train = encoder.transform(train_tags)
 y_test = encoder.transform(test_tags)
 
 num_classes = np.max(y_train) + 1
-y_train = utils.to_categorical(y_train, num_classes)
-y_test = utils.to_categorical(y_test, num_classes)
+# y_train = utils.to_categorical(y_train, num_classes)
+# y_test = utils.to_categorical(y_test, num_classes)
 
 batch_size = 100
 epochs = 1
@@ -93,19 +105,33 @@ model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
 
-history = model.fit(x_train, y_train,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    verbose=1,
-                    validation_split=0.1)
+# history = model.fit(x_train, y_train,
+#                     batch_size=batch_size,
+#                     epochs=epochs,
+#                     verbose=1,
+#                     validation_split=0.1)
 
-df2['comments'] = encoder.classes_[model.predict_classes(x_test, batch_size=batch_size, verbose=1)]
 
-df2.columns = ['Id', 'Category']
+pca = PCA(5000)
+X_trainPCA = pca.fit_transform(x_train)
+X_validPCA = pca.transform(x_test)
 
-df2['Category'].to_csv("../data/predictions.csv")
+#ensemblemod = stackingEnsemble([LogisticRegression(solver='lbfgs', multi_class='auto'), SGDClassifier(), MultinomialNB()])
+ensemblemod = LogisticRegression()
+ensemblemod.fit(X_trainPCA, y_train)
+
+#ensemblemod.predict(x_test)
+
+#
+# df2['comments'] = encoder.classes_[model.predict_classes(x_test, batch_size=batch_size, verbose=1)]
+#
+# df2.columns = ['Id', 'Category']
+#
+# df2['Category'].to_csv("../data/predictions.csv")
 
 #score = model.evaluate(x_test, y_test,
-#                       batch_size=batch_size, verbose=1)
-#print('Test accuracy:', score[1])
+                      #batch_size=batch_size, verbose=1)
+score = evaluate_acc(ensemblemod.predict(X_validPCA), y_test)
+
+print('Test accuracy:', score)
 
