@@ -55,7 +55,7 @@ df2['comments'] = df2['comments'].apply(clean_text)
 
 
 
-train_size = int(len(df) * 0.8)
+train_size = int(len(df) * 0.7)
 train_posts = df['comments'][:train_size]
 train_tags = df['subreddits'][:train_size]
 
@@ -99,13 +99,13 @@ history = model.fit(x_train, y_train,
                     verbose=1,
                     validation_split=0.1)
 
-df2['comments'] = encoder.classes_[model.predict_classes(x_test, batch_size=batch_size, verbose=1)]
+# df2['comments'] = encoder.classes_[model.predict_classes(x_test, batch_size=batch_size, verbose=1)]
+#
+# df2.columns = ['Id', 'Category']
+# 
+# df2['Category'].to_csv("../data/predictions.csv")
 
-df2.columns = ['Id', 'Category']
-
-df2['Category'].to_csv("../data/predictions.csv")
-
-#score = model.evaluate(x_test, y_test,
-#                       batch_size=batch_size, verbose=1)
-#print('Test accuracy:', score[1])
+score = model.evaluate(x_test, y_test,
+                      batch_size=batch_size, verbose=1)
+print('Test accuracy:', score[1])
 
