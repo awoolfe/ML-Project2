@@ -1,3 +1,4 @@
+# https://github.com/allenai/allennlp/blob/master/tutorials/getting_started/walk_through_allennlp/configuration.md
 {
   "dataset_reader": {
     "type": "subreddit",
