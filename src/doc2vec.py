@@ -87,15 +87,14 @@ def label_sentences(corpus, label_type):
 #X_train, X_test, y_train, y_test = train_test_split(df[X_COL], df[Y_COL], random_state=0, test_size=0.3)
 X_train = label_sentences(train_posts, 'Train')
 X_test = label_sentences(test_posts, 'Test')
-y_train = label_sentences(train_tags, 'Train')
-print(y_train)
+#y_train = label_sentences(train_tags, 'Train')
 all_data = X_train + X_test
 
 
 model_dbow = Doc2Vec(dm=0, vector_size=500, negative=5, min_count=1, alpha=0.065, min_alpha=0.065)
 model_dbow.build_vocab([x for x in tqdm(all_data)])
 
-for epoch in range(30):
+for epoch in range(5):
     model_dbow.train(utils.shuffle([x for x in tqdm(all_data)]), total_examples=len(all_data), epochs=1)
     model_dbow.alpha -= 0.002
     model_dbow.min_alpha = model_dbow.alpha
@@ -125,7 +124,7 @@ logreg = LogisticRegression(n_jobs=1, C=1e5)
 logreg.fit(train_vectors_dbow, y_train)
 #logreg = logreg.fit(train_vectors_dbow, y_train)
 y_pred = logreg.predict(test_vectors_dbow)
-#print('accuracy %s' % accuracy_score(y_pred, y_test))
+print('accuracy %s' % accuracy_score(y_pred, y_test))
 
 # with open('testpred.csv', mode='w') as f:
 #     csv_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
